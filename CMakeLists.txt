@@ -35,6 +35,7 @@ include(cmake/qt.cmake)
 # Subprojects
 #
 
+add_subdirectory(src/extron)
 add_subdirectory(src/extron_ui_qt)
 add_subdirectory(src/version)
 

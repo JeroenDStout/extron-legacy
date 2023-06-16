@@ -55,6 +55,97 @@ derived_exercise_state const& extron_data::get_derived_exercise_state()
 }
 
 
+balance_proc_structure* extron_data::create_balance_proc_structure()
+{
+    balance_proc_structure* balance = new balance_proc_structure();
+    auto const &state        = this->get_derived_exercise_state();
+    auto const &workout_data = this->history->get_workout_data();
+
+    size_t exercise_count = 0;
+    for (auto const& exe : state.extercises) 
+      exercise_count += exe.second.instance_count > 0 ? 1 : 0;
+
+    std::map<std::string, int> indexes;
+    balance->exercise_weight   = new float[exercise_count];
+    balance->exercise_peak_min = new float[exercise_count];
+
+    int idx = 0;
+    for (auto const& exe : state.extercises) {
+        if (exe.second.instance_count == 0)
+          continue;
+        balance->exercise_names.push_back(exe.first);
+        balance->exercise_weight[idx]   = this->exercise_balance[exe.first];
+        balance->exercise_peak_min[idx] = exe.second.peak_min;
+        indexes[exe.first] = idx;
+        ++idx;
+    }
+      
+    std::time_t first_date = workout_data.begin()->first.time;
+    std::time_t last_date  = workout_data.rbegin()->first.time;
+
+    for (auto workout = workout_data.rbegin(); workout != workout_data.rend(); ++workout) {
+        for (auto const& count : workout->second.workout_counts) {
+            if (count.second.count > 0)
+              goto _effort;
+        }
+        continue;
+
+      _effort:
+        last_date = workout->first.time;
+        break;
+    }
+
+    first_date -= first_date % (24 * 3600);
+    last_date  -= last_date % (24 * 3600);
+
+    size_t const       exe_count    = exercise_count;
+    std::int32_t const day_count    = std::int32_t(1 + int((last_date - first_date) / (24 * 3600)));
+    std::int32_t const day_count_ex = day_count + 2;
+    size_t const       data_size    = exercise_count * day_count;
+    size_t const       data_size_ex = exercise_count * day_count_ex;
+    
+    balance->day_weights = new float[data_size];
+    float *tmp_data = new float[data_size_ex];
+    
+    memset(balance->day_weights, 0x0, sizeof(float) * data_size);
+    memset(tmp_data,             0x0, sizeof(float) * data_size_ex);
+    balance->day_count = day_count;
+
+    for (auto const& workout : workout_data) {
+        std::int32_t const idx_day = int((workout.first.time - first_date) / (24 * 3600));
+        if (idx_day >= day_count_ex)
+          continue;
+
+        for (auto const& exercise : workout.second.workout_counts) {
+            int const idx_exercise = indexes[exercise.first];
+            tmp_data[idx_day*exe_count + idx_exercise] += state.get_effort_for_exercise_count_pure(exercise.first, exercise.second.count);
+        }
+    }
+
+    for (auto const& off : this->day_offset_and_weight) {
+        for (int read_idx = 0; read_idx < day_count_ex; read_idx++) {
+            const int write_idx = read_idx + off.first;
+            if (write_idx < 0)
+              continue;
+            if (write_idx >= day_count)
+              break;
+
+            float *read_itt = tmp_data + read_idx*exe_count;
+            float *write_itt = balance->day_weights + write_idx*exe_count;
+            float *read_end = read_itt + exe_count;
+
+            while (read_itt < read_end) {
+              *write_itt += *read_itt * off.second;
+              read_itt++;
+              write_itt++;
+            }
+        }
+    }
+
+    return balance;
+}
+
+
 void extron_data::update_derived()
 {
     time_t raw_current_time;
@@ -240,8 +331,81 @@ void extron_data::update_derived()
       }
     }
 
-    // TBA
-    // update_derived_chart();
+    update_derived_chart();
+}
+
+
+void extron_data::adjust_balance(std::map<std::string, float> const &balance)
+{
+    for (auto const& elem : balance)
+      this->exercise_balance[elem.first] = elem.second;
+
+    this->update_derived();
+}
+
+
+std::string const& extron_data::get_nickname() const
+{
+    static const std::string str_unloaded = "NOT LOADED";
+
+    if (!this->description.get())
+      return str_unloaded;
+
+    return this->description->get_nickname();
+}
+
+
+void extron_data::update_derived_chart()
+{
+    auto &derived_state = *this->derived_exercise_state_data.get();
+    auto const& workout_data = this->history->get_workout_data();
+
+    std::time_t first_date = workout_data.begin()->first.time;
+    std::time_t last_date = workout_data.rbegin()->first.time;
+
+    for (auto workout = workout_data.rbegin(); workout != workout_data.rend(); ++workout) {
+        for (auto const& count : workout->second.workout_counts) {
+          if (count.second.count > 0)
+            goto _effort;
+        }
+        continue;
+      _effort:
+        last_date = workout->first.time;
+        break;
+    }
+
+    first_date -= first_date % (24 * 3600);
+    last_date -= last_date % (24 * 3600);
+    //last_date -= (24 * 3600);
+
+    int const day_count = 1 + int((last_date - first_date) / (24 * 3600));
+
+    derived_state.chart_effort.clear();
+    derived_state.chart_effort.reserve(day_count);
+    
+    std::time_t itt_date = first_date + (12 * 3600);
+    for (int i = 0; i < day_count; i++) {
+      derived_state.chart_effort.push_back( { itt_date, 0.f} );
+      itt_date += 24 * 3600;
+    }
+
+    for (auto const& workout : workout_data) {
+        int const day_base_offset = int((workout.first.time - first_date) / (24 * 3600));
+        float sum = 0.f;
+
+        for (auto const& exercise : workout.second.workout_counts) {
+          sum += derived_state.get_effort_for_exercise_count_balanced(exercise.first, exercise.second.count);
+        }
+
+        for (auto const& offset : this->day_offset_and_weight) {
+          int const day_spread_idx = day_base_offset + offset.first;
+          if (day_spread_idx < 0 || day_spread_idx >= (int)derived_state.chart_effort.size())
+            continue;
+
+          auto &day_data = derived_state.chart_effort[day_spread_idx];
+          day_data.second += sum * offset.second;
+        }
+    }
 }
 
 
@@ -305,4 +469,88 @@ bool data_history::workout_time::operator==(data_history::workout_time const& ot
 bool data_history::workout_time::operator!=(data_history::workout_time const& other) const
 {
     return !(*this == other);
+}
+
+
+balance_proc_structure::balance_proc_structure():
+  exercise_weight(nullptr),
+  day_weights(nullptr)
+{
+}
+
+
+balance_proc_structure::~balance_proc_structure()
+{
+    delete[] exercise_weight;
+    delete[] day_weights;
+}
+
+
+void balance_proc_structure::update_step()
+{
+    int const exe_count = (int)this->exercise_names.size();
+    static const float eff_per_day = 1000.f / 7.f;
+
+    std::vector<float> effective_weights(exe_count);
+    std::vector<float> adapting_weights(exe_count);
+
+    for (int idx = 0; idx < exe_count; idx++) {
+      effective_weights[idx] = std::exp(this->exercise_weight[idx]);
+      adapting_weights[idx] = 0.f;
+    }
+
+    float sum_error = 0.f;
+
+    for (std::size_t idx_day = 0; idx_day < this->day_count; idx_day++)
+    {
+        float const* day_read = this->day_weights + idx_day*exe_count;
+      
+        float day_weight = 0.f;
+
+        for (int i = 0; i < exe_count; i++)
+          day_weight += day_read[i] * effective_weights[i];
+
+        float sqrt_error = -std::max(-1e2f, std::log2(day_weight / eff_per_day));
+        float error = sqrt_error * sqrt_error;
+        float deriv_error = sqrt_error;
+      
+        sum_error += error;
+
+        for (int i = 0; i < exe_count; i++)
+          adapting_weights[i] += day_read[i] * deriv_error;
+    }
+
+    float average = 0.f;
+    float magnitude = 0.f;
+    float adapting_weights_scale = 5e-2f;
+    for (int idx = 0; idx < exe_count; idx++) {
+        average += this->exercise_weight[idx];
+        if (this->exercise_weight[idx] <= -2.f && adapting_weights[idx] < 0.f)
+          adapting_weights[idx] = 0.f;
+        else
+          magnitude += adapting_weights[idx] * adapting_weights[idx];
+    }
+    average /= float(exe_count);
+
+    if (magnitude > 1e-1f) {
+        adapting_weights_scale /= std::sqrt(magnitude);
+    }
+
+    for (int idx = 0; idx < exe_count; idx++) {
+        this->exercise_weight[idx] += adapting_weights[idx] * adapting_weights_scale;
+        this->exercise_weight[idx] = std::max(0.f, this->exercise_weight[idx]);
+    }
+    
+    std::vector<float> ranked_weights;
+    ranked_weights.reserve(exe_count);
+    for (int idx = 0; idx < exe_count; idx++) {
+        ranked_weights.insert(
+          std::upper_bound(
+            ranked_weights.begin(),
+            ranked_weights.end(),
+            this->exercise_weight[idx]
+          ),
+          this->exercise_weight[idx]
+        );
+    }
 }

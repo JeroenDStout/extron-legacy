@@ -1,4 +1,5 @@
 #include "extron_ui_qt/window.h"
+#include "extron_ui_qt/tab_overview.h"
 #include "extron_core/data.h"
 #include "version/git_version.h"
 
@@ -165,9 +166,26 @@ bool main_window::perform_history_file_load(std::string const& hist_file_path)
 
 void main_window::perform_create_tab_overview()
 {
-    std::cout << "main_window: Creating overview tab" << std::endl;
+    auto* tab = new tab_overview(this, this->extron_data.get());
 
-    // TBA
+    QObject::connect(
+      this, &main_window::signal_must_rebuild_exercise_list,
+      tab,  &tab_overview::event_must_rebuild_exercise_list
+    );
+    QObject::connect(
+      tab,  &tab_overview::signal_create_new_workout,
+      this, &main_window::event_create_new_workout
+    );
+    QObject::connect(
+      tab,  &tab_overview::signal_show_workout,
+      this, &main_window::event_show_workout
+    );
+    QObject::connect(
+      tab,  &tab_overview::signal_commence_update_balance,
+      this, &main_window::event_commence_update_balance
+    );
+
+    this->get_ui_main_tabs()->addTab(tab, QString::fromStdString(std::string(this->extron_data->get_nickname()) += " overview"));
 }
 
 
@@ -227,18 +245,31 @@ void main_window::event_must_rebuild_all()
 }
 
 
-void main_window::event_commence_update_balance()
+void main_window::event_create_new_workout([[maybe_unused]] std::string const& workout_type)
 {
     // TBA
-	//auto proc = this->extron_data->create_balance_proc_structure();
+    //this->perform_create_tab_workout({0, 0}, workout_type);
+}
 
-	//for (int i = 0; i < 10000; i++)
-	//  proc->update_step();
 
-	//std::map<std::string, float> map;
-	//for (std::size_t i = 0; i < proc->exercise_names.size(); i++)
-	//  map[proc->exercise_names[i]] = proc->exercise_weight[i];
-	//this->extron_data->adjust_balance(map);
+void main_window::event_show_workout([[maybe_unused]] core::data_history::workout_time)
+{
+    // TBA
+    //this->perform_create_tab_workout({0, 0}, workout_type);
+}
+
+
+void main_window::event_commence_update_balance()
+{
+	auto proc = this->extron_data->create_balance_proc_structure();
+
+	for (int i = 0; i < 10000; i++)
+	  proc->update_step();
+
+	std::map<std::string, float> map;
+	for (std::size_t i = 0; i < proc->exercise_names.size(); i++)
+	  map[proc->exercise_names[i]] = proc->exercise_weight[i];
+	this->extron_data->adjust_balance(map);
 
 	emit signal_must_rebuild_exercise_list();
 }

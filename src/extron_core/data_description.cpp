@@ -185,6 +185,12 @@ void data_description::described_day_next(described_day &desc, std::time_t const
 }
 
 
+std::string const& data_description::get_nickname() const
+{
+    return this->nickname;
+}
+
+
 char const *data_description::clean_string(char const *string) const
 {
     if (string)

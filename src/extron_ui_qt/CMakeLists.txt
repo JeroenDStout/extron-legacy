@@ -11,12 +11,19 @@ setup_project_source(extron_ui_qt "core"
 setup_project_source(extron_ui_qt "window"
   src:
     window.cpp
+    tab_overview.cpp
+    clickable_label.cpp
+    format.cpp
   include:
     window.h
+    tab_overview.h
+    clickable_label.h
+    format.h
 )
 setup_project_source_qt_ui(extron_ui_qt "ui"
   window.ui
   version.ui
+  tab_overview.ui
 )
 
 # Target

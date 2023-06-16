@@ -3,6 +3,7 @@
 #include "extron_core/data.h"
 #include "extron_ui_qt/ui_window.h"
 #include "extron_ui_qt/ui_version.h"
+#include "extron_ui_qt/ui_tab_overview.h"
 
 #include <qmainwindow>
 
@@ -45,6 +46,8 @@ namespace extron::ui_qt {
 
         // events
         void event_must_rebuild_all();
+        void event_create_new_workout(std::string const&);
+        void event_show_workout(core::data_history::workout_time);
 	    void event_commence_update_balance();
         
       public slots:

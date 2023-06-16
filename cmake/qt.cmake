@@ -11,12 +11,21 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets)
 #
 
 macro(setup_project_source_qt_ui project_ref project_source_group)
-  message(STATUS "Wrap Qt UI for ${project_ref}/${project_source_group}")
-  qt6_wrap_ui(out_var ${ARGN})
-  setup_project_source(${project_ref} ${project_source_group} ${ARGN})
+  set(input_list "${ARGN}")
+  set(in_file_list)
+  set(out_file_list)
   
+  foreach(var IN LISTS input_list)
+    file(RELATIVE_PATH rel ${CMAKE_CURRENT_SOURCE_DIR} ${abs_can_include}/${var})
+    qt6_wrap_ui_ex(out_var ${rel})
+    list(APPEND in_file_list  ${abs_can_include}/${var})
+    list(APPEND out_file_list ${out_var})
+  endforeach()
+    
   set_project_source_list(${project_ref})
-  setup_project_source_external_generated(${project_ref} ${project_source_group} ${out_var})
+  setup_project_source_external_generated(${project_ref} ${project_source_group} ${out_file_list})
+  source_group(${project_source_group} FILES ${in_file_list})
+  list(APPEND ${project_source_list} ${in_file_list})
 endmacro()
 
 #
@@ -54,4 +63,33 @@ function(configure_qt_target project_ref)
     )
   endif()
 
+endfunction()
+
+
+# Override of QT6 wrap ui function to place output files in correcte folder
+function(qt6_wrap_ui_ex outfiles )
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs OPTIONS)
+
+    cmake_parse_arguments(_WRAP_UI "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    set(ui_files ${_WRAP_UI_UNPARSED_ARGUMENTS})
+    set(ui_options ${_WRAP_UI_OPTIONS})
+
+    foreach(it ${ui_files})
+        get_filename_component(outfile ${it} NAME_WE)
+        get_filename_component(infile ${it} ABSOLUTE)
+        set(outfile ${abs_gen_include}/ui_${outfile}.h)
+        add_custom_command(OUTPUT ${outfile}
+          DEPENDS ${QT_CMAKE_EXPORT_NAMESPACE}::uic
+          COMMAND ${QT_CMAKE_EXPORT_NAMESPACE}::uic
+          ARGS ${ui_options} -o ${outfile} ${infile}
+          MAIN_DEPENDENCY ${infile} VERBATIM)
+        set_source_files_properties(${infile} PROPERTIES SKIP_AUTOUIC ON)
+        set_source_files_properties(${outfile} PROPERTIES SKIP_AUTOMOC ON)
+        set_source_files_properties(${outfile} PROPERTIES SKIP_AUTOUIC ON)
+        list(APPEND ${outfiles} ${outfile})
+    endforeach()
+    set(${outfiles} ${${outfiles}} PARENT_SCOPE)
 endfunction()

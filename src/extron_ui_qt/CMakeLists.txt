@@ -25,4 +25,5 @@ configure_project_console(extron_ui_qt)
 configure_cxx_target(extron_ui_qt)
 configure_qt_target(extron_ui_qt)
 	
+add_dependencies(extron_ui_qt extron_core)
 add_dependencies(extron_ui_qt version)

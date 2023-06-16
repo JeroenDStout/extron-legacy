@@ -17,24 +17,13 @@ include(cmake/python.cmake)
 include(cmake/get_cpm.cmake)
 include(cmake/artefacts.cmake)
 include(cmake/sources.cmake)
+
+# External
+include(cmake/tinyxml.cmake)
 include(cmake/qt.cmake)
 
-#
-# Base config
-#
-
- # intentionally left blank
-
-#
-# Paths
-#
-
- # intentionally left blank
-
-#
 # Subprojects
-#
-
+add_subdirectory(src/extron_core)
 add_subdirectory(src/extron_ui_qt)
 add_subdirectory(src/version)
 

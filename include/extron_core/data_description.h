@@ -29,7 +29,9 @@ namespace extron::core {
         void described_day_next(described_day&, std::time_t const&) const;
     
         std::string const& get_nickname() const;
+
       protected:
+        // util
         char const *clean_string(char const*) const;
 
         std::string nickname;
@@ -40,18 +42,17 @@ namespace extron::core {
     class data_description::described_day {
       public:
         struct category_data {
-          std::string display_name, sort_name;
-          float weight;
+            std::string display_name, sort_name;
+            float weight;
         };
         struct exercise_data {
-          std::string category;
-          std::string display_name, sort_name;
-          std::string unit;
-          float weight;
-          float rank_min;
-          float rank_max;
-          bool is_suspended;
-          std::time_t first_mentioned;
+            std::string category;
+            std::string display_name, sort_name;
+            std::string unit;
+            float weight;
+            float peak_min;
+            bool is_suspended;
+            std::time_t first_mentioned;
         };
     
         std::time_t time;
@@ -74,8 +75,7 @@ namespace extron::core {
           std::string display_name, sort_name;
           std::string unit;
           float weight;
-          float rank_min;
-          float rank_max;
+          float peak_min;
           int set_suspend;
         };
 

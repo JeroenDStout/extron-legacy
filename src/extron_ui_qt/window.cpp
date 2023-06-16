@@ -4,10 +4,13 @@
 
 #include <qfilesystemwatcher>
 #include <qfiledialog>
+#include <qmessagebox>
 #include <qsettings>
 #include <qtabwidget>
 
 #include <iostream>
+#include <sstream>
+#include <thread>
 
 
 using namespace extron::ui_qt;
@@ -115,8 +118,25 @@ void main_window::perform_clear_loaded_data()
 bool main_window::perform_description_file_load(std::string const& desc_file_path)
 {
     std::cout << "main_window: Loading description file " << desc_file_path << std::endl;
+    
+    this->current_description_file_path = desc_file_path;
+    this->file_watcher->addPath(QString::fromStdString(this->current_description_file_path));
 
-    // TBA
+    std::string hist_file_path = desc_file_path;
+    hist_file_path.erase(hist_file_path.end() - 7, hist_file_path.end());
+    hist_file_path += ".xh.xml";
+
+    tinyxml2::XMLDocument desc_doc;
+    if (!load_xml_document(this->current_description_file_path, desc_doc))
+      return false;
+
+    this->extron_data->replace_description(desc_doc.RootElement());
+
+    if (this->current_history_file_path != hist_file_path)
+      perform_history_file_load(hist_file_path);
+
+    auto const& state = this->extron_data->get_derived_exercise_state();
+    std::cout << "main_window: Loaded " << state.extercises.size() << " exercises" << std::endl;
 
     return true;
 }
@@ -125,8 +145,19 @@ bool main_window::perform_description_file_load(std::string const& desc_file_pat
 bool main_window::perform_history_file_load(std::string const& hist_file_path)
 {
     std::cout << "main_window: Loading history file " << hist_file_path << std::endl;
+    
+    this->current_history_file_path = hist_file_path;
+    this->file_watcher->addPath(QString::fromStdString(this->current_history_file_path));
+    
+    tinyxml2::XMLDocument hist_doc;
+    if (!load_xml_document(this->current_history_file_path, hist_doc))
+      return false;
 
-    // TBA
+    this->extron_data->replace_history(hist_doc.RootElement());
+	this->event_commence_update_balance();
+    
+    auto const& state = this->extron_data->get_derived_exercise_state();
+    std::cout << "main_window: Loaded " << state.workouts.size() << " workouts" << std::endl;
 
     return true;
 }
@@ -196,7 +227,47 @@ void main_window::event_must_rebuild_all()
 }
 
 
+void main_window::event_commence_update_balance()
+{
+    // TBA
+	//auto proc = this->extron_data->create_balance_proc_structure();
+
+	//for (int i = 0; i < 10000; i++)
+	//  proc->update_step();
+
+	//std::map<std::string, float> map;
+	//for (std::size_t i = 0; i < proc->exercise_names.size(); i++)
+	//  map[proc->exercise_names[i]] = proc->exercise_weight[i];
+	//this->extron_data->adjust_balance(map);
+
+	emit signal_must_rebuild_exercise_list();
+}
+
+
 void main_window::closeEvent(QCloseEvent*)
 {
     this->upon_close();
+}
+
+
+bool main_window::load_xml_document(std::string const &path, tinyxml2::XMLDocument &document) const
+{
+    int retries = 200;
+    while (retries-- > 0) {
+      bool success = (tinyxml2::XML_SUCCESS == document.LoadFile(path.c_str()));
+      if (success)
+        return true;
+      std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(10.));
+    }
+
+    std::stringstream ss;
+    ss << "The file " << path << " could not be read.";
+
+    QMessageBox msgBox;
+    msgBox.setText(QString::fromStdString(ss.str()));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.exec();
+
+    return false;
 }

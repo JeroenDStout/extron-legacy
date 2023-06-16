@@ -45,6 +45,7 @@ namespace extron::ui_qt {
 
         // events
         void event_must_rebuild_all();
+	    void event_commence_update_balance();
         
       public slots:
         void uii_about();
@@ -53,6 +54,10 @@ namespace extron::ui_qt {
 
       signals:
         void signal_must_rebuild_exercise_list();
+
+      private:
+        // util
+        bool load_xml_document(std::string const &path, tinyxml2::XMLDocument &document) const;
 
       private:
         std::string                         current_description_file_path;

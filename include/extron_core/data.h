@@ -27,7 +27,7 @@ namespace extron::core {
 		void replace_history(tinyxml2::XMLNode const *);
 		void save_history(tinyxml2::XMLNode *) const;
 
-		derived_exercise_state const* get_derived_exercise_state();
+		derived_exercise_state const& get_derived_exercise_state();
 		bool get_workout_data(data_history::workout_time const &time, data_history::workout *out_workout) const;
 		void save_workout_data(data_history::workout_time const &previous_time, data_history::workout_time &inout_new_time, data_history::workout const&);
 	
@@ -66,7 +66,7 @@ namespace extron::core {
 	        float momentum;
 		    std::pair<float, float> weighed_median_range;
 		    float relative_balance;
-		    float rank_min, rank_max;
+		    float peak_min;
 	        bool is_suspended;
 		    time_t last_time;
 		    int instance_count;
@@ -96,11 +96,10 @@ namespace extron::core {
 		~balance_proc_structure();
 	
 		std::vector<std::string> exercise_names;
-		float *exercise_weight;
-		float *exercise_rank_min;
-		float *exercise_rank_max;
-		int	day_count;
-		float *day_weights;
+		float					 *exercise_weight;
+		float					 *exercise_peak_min;
+		std::size_t				 day_count;
+		float					 *day_weights;
 	
 		void update_step();
 	};

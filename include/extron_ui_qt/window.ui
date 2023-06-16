@@ -6,24 +6,47 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>777</width>
-    <height>462</height>
+    <width>783</width>
+    <height>471</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Demo</string>
+   <string>Extron</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QScrollArea
+{
+background-color: transparent;
+}</string>
+  </property>
+  <property name="documentMode">
+   <bool>false</bool>
   </property>
   <widget class="QWidget" name="core">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
-     <widget class="QLabel" name="intentionally_blank">
-      <property name="text">
-       <string>This space intentionally left blank</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
+     <widget class="QTabWidget" name="main_tabs"/>
     </item>
    </layout>
   </widget>
@@ -32,7 +55,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>777</width>
+     <width>783</width>
      <height>22</height>
     </rect>
    </property>
@@ -42,9 +65,15 @@
     </property>
     <addaction name="action_about"/>
    </widget>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="action_file_open"/>
+   </widget>
+   <addaction name="menuFile"/>
    <addaction name="menu_about"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="action_about">
    <property name="text">
     <string>About</string>
@@ -53,6 +82,11 @@
   <action name="action_sound_test">
    <property name="text">
     <string>Test Sound</string>
+   </property>
+  </action>
+  <action name="action_file_open">
+   <property name="text">
+    <string>Open...</string>
    </property>
   </action>
  </widget>
@@ -74,9 +108,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>action_file_open</sender>
+   <signal>triggered()</signal>
+   <receiver>extron_window</receiver>
+   <slot>uii_file_open()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>388</x>
+     <y>230</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>uii_about()</slot>
-  <slot>uii_sound_test()</slot>
+  <slot>uii_file_open()</slot>
  </slots>
 </ui>

@@ -1,6 +1,7 @@
 #include "extron_core/data.h"
 
 #include <cmath>
+#include <unordered_map>
 
 
 using namespace extron::core;
@@ -66,16 +67,16 @@ balance_proc_structure* extron_data::create_balance_proc_structure()
       exercise_count += exe.second.instance_count > 0 ? 1 : 0;
 
     std::map<std::string, int> indexes;
-    balance->exercise_weight   = new float[exercise_count];
-    balance->exercise_peak_min = new float[exercise_count];
+    balance->exercise_weight     = new float[exercise_count];
+    balance->exercise_weight_min = new float[exercise_count];
 
     int idx = 0;
     for (auto const& exe : state.extercises) {
         if (exe.second.instance_count == 0)
           continue;
         balance->exercise_names.push_back(exe.first);
-        balance->exercise_weight[idx]   = this->exercise_balance[exe.first];
-        balance->exercise_peak_min[idx] = exe.second.peak_min;
+        balance->exercise_weight[idx]     = this->exercise_balance[exe.first];
+        balance->exercise_weight_min[idx] = 0.f;
         indexes[exe.first] = idx;
         ++idx;
     }
@@ -103,6 +104,8 @@ balance_proc_structure* extron_data::create_balance_proc_structure()
     std::int32_t const day_count_ex = day_count + 2;
     size_t const       data_size    = exercise_count * day_count;
     size_t const       data_size_ex = exercise_count * day_count_ex;
+
+    std::unordered_map<std::string, std::uint32_t> peak_exercise;
     
     balance->day_weights = new float[data_size];
     float *tmp_data = new float[data_size_ex];
@@ -119,7 +122,26 @@ balance_proc_structure* extron_data::create_balance_proc_structure()
         for (auto const& exercise : workout.second.workout_counts) {
             int const idx_exercise = indexes[exercise.first];
             tmp_data[idx_day*exe_count + idx_exercise] += state.get_effort_for_exercise_count_pure(exercise.first, exercise.second.count);
+            peak_exercise[exercise.first] = std::max(peak_exercise[exercise.first], exercise.second.count);
         }
+    }
+    
+    idx = -1;
+    for (auto const& exe : state.extercises) {
+        if (exe.second.instance_count == 0)
+          continue;
+          
+        ++idx;
+
+        if (exe.second.peak_min <= 0.f)
+          continue;
+
+        int peak_count = peak_exercise[exe.first];
+        if (peak_count == 0)
+          continue;
+
+        float ratio = exe.second.peak_min / (float(peak_count) / exe.second.weighed_median);
+        balance->exercise_weight_min[indexes[exe.first]] = std::log(ratio);
     }
 
     for (auto const& off : this->day_offset_and_weight) {
@@ -495,8 +517,8 @@ void balance_proc_structure::update_step()
     std::vector<float> adapting_weights(exe_count);
 
     for (int idx = 0; idx < exe_count; idx++) {
-      effective_weights[idx] = std::exp(this->exercise_weight[idx]);
-      adapting_weights[idx] = 0.f;
+        effective_weights[idx] = std::exp(this->exercise_weight[idx]);
+        adapting_weights[idx] = 0.f;
     }
 
     float sum_error = 0.f;
@@ -538,7 +560,7 @@ void balance_proc_structure::update_step()
 
     for (int idx = 0; idx < exe_count; idx++) {
         this->exercise_weight[idx] += adapting_weights[idx] * adapting_weights_scale;
-        this->exercise_weight[idx] = std::max(0.f, this->exercise_weight[idx]);
+        this->exercise_weight[idx] = std::max(this->exercise_weight_min[idx], this->exercise_weight[idx]);
     }
     
     std::vector<float> ranked_weights;

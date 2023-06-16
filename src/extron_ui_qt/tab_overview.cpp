@@ -685,7 +685,7 @@ void tab_overview::perform_build_chart()
     
     // Scatter exercise plot
 
-    using scatter_array_type = std::array<QScatterSeries*, 6>;
+    using scatter_array_type = std::array<QScatterSeries*, 7>;
     scatter_array_type scatter_series_work;
     scatter_array_type scatter_series_journey;
     scatter_array_type scatter_series_misc;
@@ -732,6 +732,8 @@ void tab_overview::perform_build_chart()
         elem->at(4)->setBorderColor(QColor::fromRgb(100, 50, 50));
         elem->at(5)->setColor(QColor::fromRgb(128, 255, 255));
         elem->at(5)->setBorderColor(QColor::fromRgb(64, 100, 150));
+        elem->at(6)->setColor(QColor::fromRgb(255, 255, 128));
+        elem->at(6)->setBorderColor(QColor::fromRgb(100, 20, 20));
     }
 
     std::set<float> sorted_max_effort;
@@ -770,6 +772,8 @@ void tab_overview::perform_build_chart()
           workout_type = 4;
         if (workout.second.dominant_exercise.find("swim") == 0)
           workout_type = 5;
+        if (workout.second.dominant_exercise.find("boulder") == 0)
+          workout_type = 6;
         
 	    if (workout.second.type == "Workout")
 	      scatter_series_work[workout_type]->append(   QDateTime::fromSecsSinceEpoch(workout.first.time).toMSecsSinceEpoch(), std::min(max_value_plot_item, workout.second.total_effort));

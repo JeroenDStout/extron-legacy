@@ -97,7 +97,7 @@ namespace extron::core {
 	
 		std::vector<std::string> exercise_names;
 		float					 *exercise_weight;
-		float					 *exercise_peak_min;
+		float					 *exercise_weight_min;
 		std::size_t				 day_count;
 		float					 *day_weights;
 	

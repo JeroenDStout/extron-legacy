@@ -4,7 +4,7 @@ message(STATUS "Setup Qt6")
 # Packages
 #
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
 
 #
 # Source
@@ -42,6 +42,7 @@ function(configure_qt_target project_ref)
   set_target_properties(${project_ref} PROPERTIES AUTORRC ON)
   set_target_properties(${project_ref} PROPERTIES AUTOUIC ON)
   target_link_libraries(${project_ref} PRIVATE Qt6::Widgets)
+  target_link_libraries(${project_ref} PRIVATE Qt6::Charts)
   
   if(MSVC)
     message(STATUS " - Additional warnings are disabled for ${project_ref} to allow Qt compilation")
@@ -52,6 +53,7 @@ function(configure_qt_target project_ref)
             "/wd4464;" # relative include path contains '..'
             "/wd4702;" # unreachable code
             "/wd5027;" # move assignment operator was implicitly defined as deleted
+            "/wd5204;" # class has virtual functions, but its trivial destructor is not virtual
     )
 
     message(STATUS " - Add deployment for windows")

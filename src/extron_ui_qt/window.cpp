@@ -169,14 +169,12 @@ bool main_window::perform_history_file_save([[maybe_unused]] std::string const& 
 {
     std::cout << "main_window: Saving history file " << hist_file_path << std::endl;
 
-    // tba
-    //tinyxml2::XMLDocument hist_doc;
-    //hist_doc.InsertEndChild(hist_doc.NewElement("history"));
-    //this->extron_data->save_history(hist_doc.RootElement());
-    //
-    //if (!save_xml_document(hist_file_path, hist_doc))
-    //  return false;
-
+    tinyxml2::XMLDocument hist_doc;
+    hist_doc.InsertEndChild(hist_doc.NewElement("history"));
+    this->extron_data->save_history(hist_doc.RootElement());
+    
+    if (!save_xml_document(hist_file_path, hist_doc))
+      return false;
     return true;
 }
 
@@ -376,6 +374,29 @@ bool main_window::load_xml_document(std::string const &path, tinyxml2::XMLDocume
 
     std::stringstream ss;
     ss << "The file " << path << " could not be read.";
+
+    QMessageBox msgBox;
+    msgBox.setText(QString::fromStdString(ss.str()));
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.exec();
+
+    return false;
+}
+
+
+bool main_window::save_xml_document(std::string const &path, tinyxml2::XMLDocument &document) const
+{
+    int retries = 200;
+    while (retries-- > 0) {
+        bool success = (tinyxml2::XML_SUCCESS == document.SaveFile(path.c_str()));
+        if (success)
+          return true;
+        std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(10.));
+    }
+
+    std::stringstream ss;
+    ss << "The file " << path << " could not be saved.";
 
     QMessageBox msgBox;
     msgBox.setText(QString::fromStdString(ss.str()));

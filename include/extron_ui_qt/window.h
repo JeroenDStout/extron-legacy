@@ -63,7 +63,8 @@ namespace extron::ui_qt {
 
       private:
         // util
-        bool load_xml_document(std::string const &path, tinyxml2::XMLDocument &document) const;
+        bool load_xml_document(std::string const &path, tinyxml2::XMLDocument&) const;
+        bool save_xml_document(std::string const &path, tinyxml2::XMLDocument&) const;
 
       private:
         std::string                         current_description_file_path;

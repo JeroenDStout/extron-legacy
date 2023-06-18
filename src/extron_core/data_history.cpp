@@ -96,6 +96,44 @@ void data_history::deserialise_from_xml_workout(tinyxml2::XMLNode const *node)
 }
 
 
+void data_history::save(tinyxml2::XMLNode *root_node) const
+{
+    tinyxml2::XMLElement* xml_workout = root_node->GetDocument()->NewElement("workouts");
+
+    for (auto const &elem : this->workout_data)
+    {
+        this->serialise_workout_to_xml(elem.first, elem.second, xml_workout);
+    }
+
+    root_node->InsertEndChild(xml_workout);
+}
+
+
+void data_history::serialise_workout_to_xml(const workout_time &time, const data_history::workout &workout, tinyxml2::XMLNode *node) const
+{
+    tinyxml2::XMLElement* xml_workout = node->GetDocument()->NewElement("workout");
+
+    std::tm tm;
+    gmtime_s(&tm, &time.time);
+
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%Y-%m-%d %H:%M");
+    xml_workout->SetAttribute("date", ss.str().c_str());
+    xml_workout->SetAttribute("type", workout.type.c_str());
+
+    for (auto const &elem : workout.workout_counts)
+    {
+        tinyxml2::XMLElement* xml_exercise = xml_workout->GetDocument()->NewElement("x");
+        xml_exercise->SetAttribute("n", elem.first.c_str());
+        xml_exercise->SetAttribute("c", elem.second.count);
+        xml_exercise->SetAttribute("t", elem.second.target);
+        xml_workout->InsertEndChild(xml_exercise);
+    }
+    
+    node->InsertFirstChild(xml_workout);
+}
+
+
 bool data_history::get_workout_data(data_history::workout_time const &time, data_history::workout *out_workout) const
 {
     auto const &prev = this->workout_data.find(time);
@@ -110,14 +148,14 @@ bool data_history::get_workout_data(data_history::workout_time const &time, data
 void data_history::save_workout_data(data_history::workout_time const &previous_time, data_history::workout_time &inout_new_time, data_history::workout const &workout)
 {
     if (previous_time != inout_new_time) {
-      this->workout_data.erase(previous_time);
-      
-      while (true) {
-        auto const &prev = this->workout_data.find(inout_new_time);
-        if (prev == this->workout_data.end())
-          break;
-        inout_new_time.uid += 1;
-      }
+        this->workout_data.erase(previous_time);
+        
+        while (true) {
+            auto const &prev = this->workout_data.find(inout_new_time);
+            if (prev == this->workout_data.end())
+              break;
+            inout_new_time.uid += 1;
+        }
     }
 
     this->workout_data[inout_new_time] = workout;

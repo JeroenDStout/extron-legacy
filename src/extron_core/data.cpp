@@ -48,6 +48,12 @@ void extron_data::replace_history(tinyxml2::XMLNode const *xml)
 }
 
 
+void extron_data::save_history(tinyxml2::XMLNode *xml) const
+{
+    this->history->save(xml);
+}
+
+
 derived_exercise_state const& extron_data::get_derived_exercise_state()
 {
     if (!this->derived_exercise_state_data.get())

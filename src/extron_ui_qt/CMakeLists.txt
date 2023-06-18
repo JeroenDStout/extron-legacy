@@ -25,6 +25,10 @@ setup_project_source_qt_ui(extron_ui_qt "ui"
   version.ui
   tab_overview.ui
 )
+setup_project_source(extron_ui_qt "assets"
+  src:
+    ${rel_can_assets}/app_resource/resource.rc
+)
 
 # Target
 configure_project_executable(extron_ui_qt)

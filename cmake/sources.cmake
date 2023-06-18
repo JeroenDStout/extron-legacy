@@ -18,6 +18,7 @@ macro(init_directory name)
   set(abs_gen_include ${CMAKE_BINARY_DIR}/gen/${dir_include_rel})
   set(abs_can_script  ${project_root_dir}/${dir_script_rel})
   set(abs_gen_script  ${CMAKE_BINARY_DIR}/gen/${dir_script_rel})
+  file(RELATIVE_PATH rel_can_assets ${abs_can_src} ${project_asset_dir})
   
   message(STATUS "Canononical Source  : ./${abs_can_src}")
   message(STATUS "Canononical Include : ./${abs_can_include}")

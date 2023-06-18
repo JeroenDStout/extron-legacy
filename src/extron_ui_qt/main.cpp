@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     extron::ui_qt::main_window w;
-    w.setWindowTitle(QString("Extron ") + gaos::version::get_git_essential_version());
+    w.setWindowTitle(QString("Extron Legacy ") + gaos::version::get_git_essential_version());
     w.show();
     return a.exec();
 }

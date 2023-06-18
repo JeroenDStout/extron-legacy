@@ -97,13 +97,13 @@ std::string format::format_momentum(float momentum)
 }
 
 
-std::vector<format::exe_data_ex> format::get_filtered_sorted_exercises(core::derived_exercise_state const *state, workout_filter const &filter)
+std::vector<format::exe_data_ex> format::get_filtered_sorted_exercises(core::derived_exercise_state const &state, workout_filter const &filter)
 {
     std::vector<format::exe_data_ex> exercises;
 
     std::string filter_name = filter.name;
 
-    for (auto const& exe : state->extercises) {
+    for (auto const& exe : state.extercises) {
         if (   filter_name.length() > 0
             && std::search(
               exe.second.display_name.begin(), exe.second.display_name.end(),
@@ -120,8 +120,8 @@ std::vector<format::exe_data_ex> format::get_filtered_sorted_exercises(core::der
         *((exe_data*)&data) = exe.second;
         
         if (!exe.second.is_suspended) {
-            auto const found_cat = state->categories.find(data.category);
-            if (found_cat != state->categories.end()) {
+            auto const found_cat = state.categories.find(data.category);
+            if (found_cat != state.categories.end()) {
                 data.category_display_name = found_cat->second.display_name;
                 data.category_sort_name = found_cat->second.sort_name;
             }

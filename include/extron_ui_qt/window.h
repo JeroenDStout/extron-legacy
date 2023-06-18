@@ -48,6 +48,9 @@ namespace extron::ui_qt {
         void event_must_rebuild_all();
         void event_create_new_workout(std::string const&);
         void event_show_workout(core::data_history::workout_time);
+        void event_close_tab(QWidget*);
+        void event_rename_tab(QWidget*, std::string const&);
+        void event_history_requires_save();
 	    void event_commence_update_balance();
         
       public slots:

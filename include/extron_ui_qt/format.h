@@ -25,6 +25,6 @@ namespace extron::ui_qt::format {
         std::string category_display_name, category_sort_name;
     };
     
-    std::vector<exe_data_ex> get_filtered_sorted_exercises(core::derived_exercise_state const*, workout_filter const&);
+    std::vector<exe_data_ex> get_filtered_sorted_exercises(core::derived_exercise_state const&, workout_filter const&);
 
 };

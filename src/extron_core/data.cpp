@@ -56,6 +56,19 @@ derived_exercise_state const& extron_data::get_derived_exercise_state()
 }
 
 
+bool extron_data::get_workout_data(data_history::workout_time const &previous_time, data_history::workout *workout) const
+{
+    return this->history->get_workout_data(previous_time, workout);
+}
+
+
+void extron_data::save_workout_data(data_history::workout_time const &previous_time, data_history::workout_time &inout_new_time, data_history::workout const &workout)
+{
+    this->history->save_workout_data(previous_time, inout_new_time, workout);
+    this->derived_exercise_state_data.reset(nullptr);
+}
+
+
 balance_proc_structure* extron_data::create_balance_proc_structure()
 {
     balance_proc_structure* balance = new balance_proc_structure();

@@ -107,6 +107,23 @@ bool data_history::get_workout_data(data_history::workout_time const &time, data
 }
 
 
+void data_history::save_workout_data(data_history::workout_time const &previous_time, data_history::workout_time &inout_new_time, data_history::workout const &workout)
+{
+    if (previous_time != inout_new_time) {
+      this->workout_data.erase(previous_time);
+      
+      while (true) {
+        auto const &prev = this->workout_data.find(inout_new_time);
+        if (prev == this->workout_data.end())
+          break;
+        inout_new_time.uid += 1;
+      }
+    }
+
+    this->workout_data[inout_new_time] = workout;
+}
+
+
 const std::map<data_history::workout_time, data_history::workout>& data_history::get_workout_data() const
 {
     return this->workout_data;

@@ -12,7 +12,7 @@ setup_project_source(version "version"
 )
 setup_project_source(version "script"
   script:
-    ../touch
+    ../../touch
     generate_git_version.py
     git_version.txt GENERATED
 )

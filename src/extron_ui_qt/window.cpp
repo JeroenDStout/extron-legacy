@@ -1,5 +1,6 @@
 #include "extron_ui_qt/window.h"
 #include "extron_ui_qt/tab_overview.h"
+#include "extron_ui_qt/tab_workout.h"
 #include "extron_core/data.h"
 #include "version/git_version.h"
 
@@ -164,6 +165,22 @@ bool main_window::perform_history_file_load(std::string const& hist_file_path)
 }
 
 
+bool main_window::perform_history_file_save([[maybe_unused]] std::string const& hist_file_path)
+{
+    std::cout << "main_window: Saving history file " << hist_file_path << std::endl;
+
+    // tba
+    //tinyxml2::XMLDocument hist_doc;
+    //hist_doc.InsertEndChild(hist_doc.NewElement("history"));
+    //this->extron_data->save_history(hist_doc.RootElement());
+    //
+    //if (!save_xml_document(hist_file_path, hist_doc))
+    //  return false;
+
+    return true;
+}
+
+
 void main_window::perform_create_tab_overview()
 {
     auto* tab = new tab_overview(this, this->extron_data.get());
@@ -192,8 +209,46 @@ void main_window::perform_create_tab_overview()
 void main_window::perform_create_tab_workout(core::data_history::workout_time time, std::string const& type)
 {
     std::cout << "main_window: Creating workout tab" << time.time << ":" << time.uid << " (" << type << ")" << std::endl;
+    
+    QWidget *old_tab;
+    for (int old_idx = 0; old_tab = this->get_ui_main_tabs()->widget(old_idx); old_idx++) {
+        auto *tab = qobject_cast<ui_tab_workout*>(old_tab);
+        if (tab == nullptr)
+          continue;
+        
+        if (tab->get_old_workout_time() != time)
+          continue;
+          
+        this->get_ui_main_tabs()->setCurrentIndex(old_idx);
+        return;
+    }
 
-    // TBA
+    auto *tab = new ui_tab_workout(this, this->extron_data.get(), time);
+    
+    if (type.size() > 0)
+      tab->set_type(type);
+
+    QObject::connect(
+      this, &main_window::signal_must_rebuild_exercise_list,
+      tab,  &ui_tab_workout::event_must_rebuild_exercise_list
+    );
+    QObject::connect(
+      tab,  &ui_tab_workout::signal_close_tab,
+      this, &main_window::event_close_tab
+    );
+    QObject::connect(
+      tab,  &ui_tab_workout::signal_rename_tab,
+      this, &main_window::event_rename_tab
+    );
+    QObject::connect(
+      tab,  &ui_tab_workout::signal_history_requires_save,
+      this, &main_window::event_history_requires_save
+    );
+
+    auto idx = this->get_ui_main_tabs()->addTab(tab, QString::fromStdString("Work-out"));
+    this->get_ui_main_tabs()->setCurrentIndex(idx);
+
+    tab->perform_setup();
 }
 
 
@@ -245,17 +300,45 @@ void main_window::event_must_rebuild_all()
 }
 
 
-void main_window::event_create_new_workout([[maybe_unused]] std::string const& workout_type)
+void main_window::event_create_new_workout(std::string const &workout_type)
 {
-    // TBA
-    //this->perform_create_tab_workout({0, 0}, workout_type);
+    std::cout << "main_window: Creating new workout" << std::endl;
+
+    this->perform_create_tab_workout({0, 0}, workout_type);
 }
 
 
-void main_window::event_show_workout([[maybe_unused]] core::data_history::workout_time)
+void main_window::event_show_workout(core::data_history::workout_time time)
 {
-    // TBA
-    //this->perform_create_tab_workout({0, 0}, workout_type);
+    std::cout << "main_window: Showing workout" << std::endl;
+
+    this->perform_create_tab_workout(time, "");
+}
+
+
+void main_window::event_close_tab(QWidget *widget)
+{
+    auto idx = this->ui_window.main_tabs->indexOf(widget);
+    if (idx <= 0)
+      return;
+    this->ui_window.main_tabs->removeTab(idx);
+    this->ui_window.main_tabs->setCurrentIndex(0);
+}
+
+
+void main_window::event_rename_tab(QWidget *widget, std::string const &name)
+{
+    auto idx = this->ui_window.main_tabs->indexOf(widget);
+    if (idx == -1)
+      return;
+    this->ui_window.main_tabs->setTabText(idx, name.c_str());
+}
+
+
+void main_window::event_history_requires_save()
+{
+    this->perform_history_file_save(this->current_history_file_path);
+    this->event_must_rebuild_all();
 }
 
 

@@ -10,20 +10,23 @@ setup_project_source(extron_ui_qt "core"
 )
 setup_project_source(extron_ui_qt "window"
   src:
-    window.cpp
-    tab_overview.cpp
     clickable_label.cpp
     format.cpp
+    tab_overview.cpp
+    tab_workout.cpp
+    window.cpp
   include:
-    window.h
-    tab_overview.h
     clickable_label.h
     format.h
+    tab_overview.h
+    tab_workout.h
+    window.h
 )
 setup_project_source_qt_ui(extron_ui_qt "ui"
   window.ui
   version.ui
   tab_overview.ui
+  tab_workout.ui
 )
 setup_project_source(extron_ui_qt "assets"
   src:
